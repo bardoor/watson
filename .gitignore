@@ -1,0 +1,4 @@
+recordings
+.venv
+.build
+__pycache__
