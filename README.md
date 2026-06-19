@@ -14,11 +14,12 @@ No screen video recording.
 Audio only.
 
 ### Requirements
-* macOS 13+
+* macOS 15+
 * Apple Silicon recommended
-* Python 3.11+
+* Elixir 1.17+
+* Erlang / OTP 28+
 * Swift / Xcode Command Line Tools
-* Homebrew
+* `mlx_whisper` available in `PATH`
 
 ### Install dependencies
 
@@ -28,39 +29,58 @@ Install Xcode tools:
 xcode-select --install
 ```
 
-Install uv and ffmpeg:
+Install Elixir and ffmpeg:
 
 ```bash
-brew install uv ffmpeg
-Install Python dependencies
-uv sync
+brew install elixir ffmpeg
 ```
 
-### Build native recorder
+Install `mlx_whisper` the way you prefer. Example:
+
+```bash
+pip install mlx-whisper
+```
+
+If the binary is not in `PATH`, set `WATSON_MLX_WHISPER_PATH`.
+
+### Build
 ```bash
 cd native/macos_recorder
 swift build -c release
 cd ../..
+mix deps.get
+mix escript.build
 ```
 
 ### Run
 
-Russian:
+List microphones:
 
 ```bash
-uv run watson --language ru
+./watson devices
 ```
 
-English:
+Record in Russian:
 
 ```bash
-uv run watson --language en
+./watson record --language ru
 ```
 
-Stop recording with:
+Record in English:
 
 ```bash
-Ctrl+C
+./watson record --language en
+```
+
+Stop recording with `Enter`.
+
+You can also override runtime paths through env vars:
+
+```bash
+WATSON_HELPER_PATH=/absolute/path/to/watson-recorder \
+WATSON_MLX_WHISPER_PATH=/absolute/path/to/mlx_whisper \
+WATSON_RECORDINGS_DIR=/absolute/path/to/recordings \
+./watson record
 ```
 
 ### Output
@@ -75,15 +95,20 @@ Example:
 
 ```bash
 recordings/2026-05-13_00-21-48/
-  mic.m4a
-  system.m4a
-
-  mic_whisper.wav
-  system_whisper.wav
-  mixed_preview.wav
-
+  mic.wav
+  system.wav
+  mic_transcript.partial.txt
+  system_transcript.partial.txt
   mic_transcript.txt
   system_transcript.txt
+  mic_transcript.tsv
+  system_transcript.tsv
+  mic_transcript.cleaned.txt
+  mic_transcript.cleaned.tsv
+  system_transcript.cleaned.txt
+  system_transcript.cleaned.tsv
+  dialogue_transcript.txt
+  dialogue_transcript.tsv
 ```
 
 ### macOS permissions
@@ -99,6 +124,8 @@ Watson does not save video frames.
 
 Notes
 * microphone and system audio are transcribed separately
-* tracks keep the same duration
-* mixed_preview.wav is only for listening/debugging
+* audio is persisted incrementally during the session
+* partial transcripts are produced from rolling `mlx_whisper` snapshots
+* cleaned transcripts remove empty segments, invalid timestamps, punctuation-only noise, known subtitle noise, and repeated text after its first occurrence
+* dialogue_transcript.txt merges cleaned microphone and system transcripts in chronological order
 * all transcription runs locally through mlx-whisper

@@ -2,3 +2,7 @@ recordings
 .venv
 .build
 __pycache__
+
+erl_crash.dump
+
+_build/
